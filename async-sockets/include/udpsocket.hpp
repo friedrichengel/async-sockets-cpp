@@ -10,11 +10,11 @@ public:
     std::function<void(std::string, std::string, std::uint16_t)> onMessageReceived;
     std::function<void(const char*, int, std::string, std::uint16_t)> onRawMessageReceived;
 
-    explicit UDPSocket(bool useConnect = false, FDR_ON_ERROR, int socketId = -1): BaseSocket(onError, SocketType::UDP, socketId)
+    explicit UDPSocket(bool useConnect = false, FDR_ON_ERROR, int socketId = -1) : BaseSocket(onError, SocketType::UDP, socketId)
     {
         if (useConnect)
         {
-            
+
             std::thread t(Receive, this); // usage with Connect()
             t.detach();
         }
@@ -24,13 +24,13 @@ public:
             t.detach();
         }
     }
-    
+
     // SendTo with no connection
-    void SendTo(const char *bytes, size_t byteslength, std::string host, uint16_t port, FDR_ON_ERROR)
+    void SendTo(const char* bytes, size_t byteslength, std::string host, uint16_t port, FDR_ON_ERROR)
     {
         sockaddr_in hostAddr;
 
-        struct addrinfo hints, *res, *it;
+        struct addrinfo hints, * res, * it;
         memset(&hints, 0, sizeof(hints));
         hints.ai_family = AF_INET;
         hints.ai_socktype = SOCK_DGRAM;
@@ -46,7 +46,7 @@ public:
         {
             if (it->ai_family == AF_INET)
             { // IPv4
-                memcpy((void *)(&hostAddr), (void *)it->ai_addr, sizeof(sockaddr_in));
+                memcpy((void*)(&hostAddr), (void*)it->ai_addr, sizeof(sockaddr_in));
                 break; // for now, just get first ip (ipv4).
             }
         }
@@ -56,7 +56,7 @@ public:
         hostAddr.sin_port = htons(port);
         hostAddr.sin_family = AF_INET;
 
-        if (sendto(this->sock, bytes, byteslength, 0, (sockaddr *)&hostAddr, sizeof(hostAddr)) < 0)
+        if (sendto(this->sock, bytes, byteslength, 0, (sockaddr*)&hostAddr, sizeof(hostAddr)) < 0)
         {
             onError(errno, "Cannot send message to the address.");
             return;
@@ -68,10 +68,10 @@ public:
     }
 
     // Send with Connect()
-    int Send(const char *bytes, size_t byteslength)
+    int Send(const char* bytes, size_t byteslength)
     {
         if (this->isClosed)
-        return -1;
+            return -1;
 
         int sent = 0;
         if ((sent = send(this->sock, bytes, byteslength, 0)) < 0)
@@ -93,7 +93,7 @@ public:
         this->address.sin_addr.s_addr = ipv4;
 
         // Try to connect.
-        if (connect(this->sock, (const sockaddr *)&this->address, sizeof(sockaddr_in)) < 0)
+        if (connect(this->sock, (const sockaddr*)&this->address, sizeof(sockaddr_in)) < 0)
         {
             onError(errno, "Connection failed to the host.");
             return;
@@ -101,7 +101,7 @@ public:
     }
     void Connect(std::string host, uint16_t port, FDR_ON_ERROR)
     {
-        struct addrinfo hints, *res, *it;
+        struct addrinfo hints, * res, * it;
         memset(&hints, 0, sizeof(hints));
         hints.ai_family = AF_INET;
         hints.ai_socktype = SOCK_DGRAM;
@@ -117,7 +117,7 @@ public:
         {
             if (it->ai_family == AF_INET)
             { // IPv4
-                memcpy((void *)(&this->address), (void *)it->ai_addr, sizeof(sockaddr_in));
+                memcpy((void*)(&this->address), (void*)it->ai_addr, sizeof(sockaddr_in));
                 break; // for now, just get first ip (ipv4).
             }
         }
@@ -128,7 +128,7 @@ public:
     }
 
 private:
-    static void Receive(UDPSocket *udpSocket)
+    static void Receive(UDPSocket* udpSocket)
     {
         char tempBuffer[udpSocket->BUFFER_SIZE];
 
@@ -153,7 +153,7 @@ private:
             }
         }
     }
-    static void ReceiveFrom(UDPSocket *udpSocket)
+    static void ReceiveFrom(UDPSocket* udpSocket)
     {
         sockaddr_in hostAddr;
         socklen_t hostAddrSize = sizeof(hostAddr);
@@ -163,7 +163,7 @@ private:
         while (true)
         {
             int messageLength;
-            messageLength = recvfrom(udpSocket->sock, tempBuffer, udpSocket->BUFFER_SIZE, 0, (sockaddr *)&hostAddr, &hostAddrSize);
+            messageLength = recvfrom(udpSocket->sock, tempBuffer, udpSocket->BUFFER_SIZE, 0, (sockaddr*)&hostAddr, &hostAddrSize);
 
             if (messageLength < 0)
             {

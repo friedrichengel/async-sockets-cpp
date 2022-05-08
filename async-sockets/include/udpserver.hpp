@@ -17,16 +17,16 @@ public:
         this->address.sin_family = AF_INET;
         this->address.sin_port = htons(port);
 
-        if (bind(this->sock, (const sockaddr *)&this->address, sizeof(this->address)) < 0)
+        if (bind(this->sock, (const sockaddr*)&this->address, sizeof(this->address)) < 0)
         {
             onError(errno, "Cannot bind the socket.");
             return;
         }
     }
-    
+
     void Bind(int port, FDR_ON_ERROR)
     {
-        this->Bind("0.0.0.0", port, onError);
+        this->Bind("0.0.0.0", (unsigned short)port, onError);
     }
 
     void setBroadcast(FDR_ON_ERROR)

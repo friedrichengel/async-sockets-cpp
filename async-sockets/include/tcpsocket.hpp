@@ -14,10 +14,12 @@ public:
     std::function<void(const char*, int)> onRawMessageReceived;
     std::function<void(int)> onSocketClosed;
 
-    explicit TCPSocket(FDR_ON_ERROR, int socketId = -1) : BaseSocket(onError, TCP, socketId){}
+    explicit TCPSocket(FDR_ON_ERROR, int socketId = -1) : BaseSocket(onError, TCP, socketId) {}
+
+    ~TCPSocket(){ }
 
     // Send TCP Packages
-    int Send(const char *bytes, size_t byteslength)
+    int Send(const char* bytes, size_t byteslength)
     {
         if (this->isClosed)
             return -1;
@@ -31,9 +33,9 @@ public:
     }
     int Send(std::string message) { return this->Send(message.c_str(), message.length()); }
 
-    void Connect(std::string host, uint16_t port, std::function<void()> onConnected = [](){}, FDR_ON_ERROR)
+    void Connect(std::string host, uint16_t port, std::function<void()> onConnected = []() {}, FDR_ON_ERROR)
     {
-        struct addrinfo hints, *res, *it;
+        struct addrinfo hints, * res, * it;
         memset(&hints, 0, sizeof(hints));
         hints.ai_family = AF_INET;
         hints.ai_socktype = SOCK_STREAM;
@@ -45,7 +47,7 @@ public:
             return;
         }
 
-        for(it = res; it != NULL; it = it->ai_next)
+        for (it = res; it != NULL; it = it->ai_next)
         {
             if (it->ai_family == AF_INET) { // IPv4
                 memcpy((void*)(&this->address), (void*)it->ai_addr, sizeof(sockaddr_in));
@@ -57,7 +59,7 @@ public:
 
         this->Connect((uint32_t)this->address.sin_addr.s_addr, port, onConnected, onError);
     }
-    void Connect(uint32_t ipv4, uint16_t port, std::function<void()> onConnected = [](){}, FDR_ON_ERROR)
+    void Connect(uint32_t ipv4, uint16_t port, std::function<void()> onConnected = []() {}, FDR_ON_ERROR)
     {
         this->address.sin_family = AF_INET;
         this->address.sin_port = htons(port);
@@ -66,7 +68,7 @@ public:
         this->setTimeout(5);
 
         // Try to connect.
-        if (connect(this->sock, (const sockaddr *)&this->address, sizeof(sockaddr_in)) < 0)
+        if (connect(this->sock, (const sockaddr*)&this->address, sizeof(sockaddr_in)) < 0)
         {
             onError(errno, "Connection failed to the host.");
             this->setTimeout(0);
@@ -88,11 +90,13 @@ public:
         t.detach();
     }
 
-    void setAddressStruct(sockaddr_in addr) {this->address = addr;}
-    sockaddr_in getAddressStruct() const {return this->address;}
+    void setAddressStruct(sockaddr_in addr) { this->address = addr; }
+    sockaddr_in getAddressStruct() const { return this->address; }
+
+    bool deleteAfterClosed = false;
 
 private:
-    static void Receive(TCPSocket *socket)
+    static void Receive(TCPSocket* socket)
     {
         char tempBuffer[socket->BUFFER_SIZE];
         int messageLength;
@@ -100,28 +104,28 @@ private:
         while ((messageLength = recv(socket->sock, tempBuffer, socket->BUFFER_SIZE, 0)) > 0)
         {
             tempBuffer[messageLength] = '\0';
-            if(socket->onMessageReceived)
+            if (socket->onMessageReceived)
                 socket->onMessageReceived(std::string(tempBuffer, messageLength));
-            
-            if(socket->onRawMessageReceived)
+
+            if (socket->onRawMessageReceived)
                 socket->onRawMessageReceived(tempBuffer, messageLength);
         }
 
         socket->Close();
-        if(socket->onSocketClosed)
+        if (socket->onSocketClosed)
             socket->onSocketClosed(errno);
-        
-        if (socket != nullptr)
+
+        if (socket->deleteAfterClosed && socket != nullptr)
             delete socket;
     }
 
     void setTimeout(int seconds)
     {
-        struct timeval tv;      
+        struct timeval tv;
         tv.tv_sec = seconds;
         tv.tv_usec = 0;
 
-        setsockopt(this->sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(tv));
-        setsockopt(this->sock, SOL_SOCKET, SO_SNDTIMEO, (char *)&tv, sizeof(tv));
+        setsockopt(this->sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&tv, sizeof(tv));
+        setsockopt(this->sock, SOL_SOCKET, SO_SNDTIMEO, (char*)&tv, sizeof(tv));
     }
 };
